@@ -49,8 +49,9 @@ PSEUDO_REGEX = '(?:' + PSEUDO_REGEX.join('|') + ')(?![a-z])';
 // regular grammar to match valid atomic classes
 var GRAMMAR = {
     'BOUNDARY'      : '(?:^|\\s|"|\'|\{|\})',
-    'PARENT'        : '[a-zA-Z][-_a-zA-Z0-9]+?',
-    'PARENT_SEP'    : '[>_+]',
+    'CLASSNAME'     : '[a-zA-Z][-_a-zA-Z0-9]+',
+    'PARENT_SEP'    : '[>_]',
+    'SIBLING_SEP'   : '[+~]',
     // all characters allowed to be a prop
     'PROP'          : '[A-Za-z]+',
     // all character allowed to be in values
@@ -72,7 +73,8 @@ var GRAMMAR = {
 GRAMMAR.PARENT_SELECTOR = [
     // parent (any character that is not a space)
     '(?<parent>',
-        GRAMMAR.PARENT,
+        GRAMMAR.CLASSNAME,
+        '?',
     ')',
     // followed by optional pseudo class
     '(?<parentPseudo>',
@@ -87,7 +89,8 @@ GRAMMAR.PARENT_SELECTOR = [
 GRAMMAR.PARENT_SELECTOR_SIMPLE = [
     // parent (any character that is not a space)
     '(?<parent>',
-        GRAMMAR.PARENT,
+        GRAMMAR.CLASSNAME,
+        '?',
     ')',
     // followed by optional pseudo class
     '(?<parentPseudo>',
@@ -96,6 +99,17 @@ GRAMMAR.PARENT_SELECTOR_SIMPLE = [
     // followed by either a descendant or direct symbol
     '(?<parentSep>',
         GRAMMAR.PARENT_SEP,
+    ')'
+].join('');
+
+GRAMMAR.SIBLING_SELECTOR = [
+    // general or adjacent sibling symbol
+    '(?<siblingSep>',
+        GRAMMAR.SIBLING_SEP,
+    ')',
+    // sibling (any character that is not a space)
+    '(?<sibling>',
+        GRAMMAR.CLASSNAME,
     ')'
 ].join('');
 
@@ -188,6 +202,7 @@ Grammar.prototype.getSyntax = function getSyntax(isSimple)/*:string*/ {
         ')?',
         // the main syntax
         isSimple ? this.simpleSyntax : this.complexSyntax,
+        // optional !important
         '(?<important>',
             GRAMMAR.IMPORTANT,
         ')?',
@@ -198,6 +213,10 @@ Grammar.prototype.getSyntax = function getSyntax(isSimple)/*:string*/ {
         // optional modifier
         '(?:',
             GRAMMAR.BREAKPOINT,
+        ')?',
+        // optional sibling
+        '(?<siblingSelector>',
+            GRAMMAR.SIBLING_SELECTOR,
         ')?',
         ')'
     ].join('');
